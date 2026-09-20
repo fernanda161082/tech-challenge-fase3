@@ -1,0 +1,499 @@
+{
+  "coeficientes": [
+    {
+      "variavel": "cat__sigla_uf_BA",
+      "coeficiente": -2.046144564916913,
+      "magnitude": 2.046144564916913
+    },
+    {
+      "variavel": "cat__sigla_uf_CE",
+      "coeficiente": 2.0326286943982974,
+      "magnitude": 2.0326286943982974
+    },
+    {
+      "variavel": "cat__sigla_uf_RS",
+      "coeficiente": -1.5702277661842892,
+      "magnitude": 1.5702277661842892
+    },
+    {
+      "variavel": "cat__sigla_uf_GO",
+      "coeficiente": 1.2779276200457124,
+      "magnitude": 1.2779276200457124
+    },
+    {
+      "variavel": "num__meta_2024",
+      "coeficiente": -1.2197631951602488,
+      "magnitude": 1.2197631951602488
+    },
+    {
+      "variavel": "cat__sigla_uf_ES",
+      "coeficiente": 1.0820251539532815,
+      "magnitude": 1.0820251539532815
+    },
+    {
+      "variavel": "cat__sigla_uf_PE",
+      "coeficiente": 0.9771971493017568,
+      "magnitude": 0.9771971493017568
+    },
+    {
+      "variavel": "cat__sigla_uf_SE",
+      "coeficiente": -0.9380333104011932,
+      "magnitude": 0.9380333104011932
+    },
+    {
+      "variavel": "num__media_portugues_2023",
+      "coeficiente": 0.8919989337235604,
+      "magnitude": 0.8919989337235604
+    },
+    {
+      "variavel": "cat__sigla_uf_SC",
+      "coeficiente": 0.8789952497624203,
+      "magnitude": 0.8789952497624203
+    },
+    {
+      "variavel": "num__taxa_2023",
+      "coeficiente": -0.8548050886195899,
+      "magnitude": 0.8548050886195899
+    },
+    {
+      "variavel": "cat__sigla_uf_MG",
+      "coeficiente": 0.7594163357074813,
+      "magnitude": 0.7594163357074813
+    },
+    {
+      "variavel": "cat__sigla_uf_RO",
+      "coeficiente": 0.7491158577457693,
+      "magnitude": 0.7491158577457693
+    },
+    {
+      "variavel": "cat__sigla_uf_SP",
+      "coeficiente": -0.7446483685034015,
+      "magnitude": 0.7446483685034015
+    },
+    {
+      "variavel": "cat__regiao_Centro-Oeste",
+      "coeficiente": 0.698507523082905,
+      "magnitude": 0.698507523082905
+    },
+    {
+      "variavel": "cat__sigla_uf_PR",
+      "coeficiente": 0.6353692658322284,
+      "magnitude": 0.6353692658322284
+    },
+    {
+      "variavel": "cat__sigla_uf_RN",
+      "coeficiente": -0.6240042871480972,
+      "magnitude": 0.6240042871480972
+    },
+    {
+      "variavel": "cat__regiao_Sudeste",
+      "coeficiente": 0.594317273490477,
+      "magnitude": 0.594317273490477
+    },
+    {
+      "variavel": "cat__sigla_uf_AP",
+      "coeficiente": -0.5831832655913523,
+      "magnitude": 0.5831832655913523
+    },
+    {
+      "variavel": "cat__regiao_Norte",
+      "coeficiente": -0.5560471669128355,
+      "magnitude": 0.5560471669128355
+    },
+    {
+      "variavel": "cat__regiao_Nordeste",
+      "coeficiente": -0.5201971512993764,
+      "magnitude": 0.5201971512993764
+    },
+    {
+      "variavel": "cat__sigla_uf_RJ",
+      "coeficiente": -0.5024758476668839,
+      "magnitude": 0.5024758476668839
+    },
+    {
+      "variavel": "cat__sigla_uf_MS",
+      "coeficiente": -0.3872095161547678,
+      "magnitude": 0.3872095161547678
+    },
+    {
+      "variavel": "num__nivel_oficial_2023",
+      "coeficiente": 0.3244366877666418,
+      "magnitude": 0.3244366877666418
+    },
+    {
+      "variavel": "cat__sigla_uf_AM",
+      "coeficiente": -0.3139044507597481,
+      "magnitude": 0.3139044507597481
+    },
+    {
+      "variavel": "cat__sigla_uf_TO",
+      "coeficiente": -0.3024826670845872,
+      "magnitude": 0.3024826670845872
+    },
+    {
+      "variavel": "num__log_populacao",
+      "coeficiente": -0.2900261432089607,
+      "magnitude": 0.2900261432089607
+    },
+    {
+      "variavel": "num__participacao_2023",
+      "coeficiente": 0.2816833689078387,
+      "magnitude": 0.2816833689078387
+    },
+    {
+      "variavel": "cat__porte_municipio_metropole",
+      "coeficiente": 0.26464975569626853,
+      "magnitude": 0.26464975569626853
+    },
+    {
+      "variavel": "num__esforco_exigido",
+      "coeficiente": -0.26239317857536504,
+      "magnitude": 0.26239317857536504
+    },
+    {
+      "variavel": "cat__sigla_uf_MT",
+      "coeficiente": -0.1922105808080432,
+      "magnitude": 0.1922105808080432
+    },
+    {
+      "variavel": "cat__sigla_uf_MA",
+      "coeficiente": 0.17727465913300022,
+      "magnitude": 0.17727465913300022
+    },
+    {
+      "variavel": "cat__sigla_uf_AL",
+      "coeficiente": -0.1489070764478753,
+      "magnitude": 0.1489070764478753
+    },
+    {
+      "variavel": "cat__porte_municipio_pequeno_I",
+      "coeficiente": -0.1396117973607913,
+      "magnitude": 0.1396117973607913
+    },
+    {
+      "variavel": "cat__sigla_uf_PA",
+      "coeficiente": -0.1055926412229161,
+      "magnitude": 0.1055926412229161
+    },
+    {
+      "variavel": "cat__sigla_uf_PB",
+      "coeficiente": 0.06464270645674226,
+      "magnitude": 0.06464270645674226
+    },
+    {
+      "variavel": "cat__porte_municipio_medio",
+      "coeficiente": -0.061360760666949926,
+      "magnitude": 0.061360760666949926
+    },
+    {
+      "variavel": "cat__porte_municipio_grande",
+      "coeficiente": 0.06095054487877604,
+      "magnitude": 0.06095054487877604
+    },
+    {
+      "variavel": "cat__regiao_Sul",
+      "coeficiente": -0.05586325058964296,
+      "magnitude": 0.05586325058964296
+    },
+    {
+      "variavel": "cat__porte_municipio_pequeno_II",
+      "coeficiente": 0.03608948522422438,
+      "magnitude": 0.03608948522422438
+    },
+    {
+      "variavel": "cat__sigla_uf_PI",
+      "coeficiente": -0.014851121675090975,
+      "magnitude": 0.014851121675090975
+    }
+  ],
+  "permutacao": [
+    {
+      "variavel": "sigla_uf",
+      "queda_auc": 0.16576176756279934,
+      "desvio": 0.009494333095782482
+    },
+    {
+      "variavel": "meta_2024",
+      "queda_auc": 0.11953465909935887,
+      "desvio": 0.011358293212653822
+    },
+    {
+      "variavel": "media_portugues_2023",
+      "queda_auc": 0.08094170245640073,
+      "desvio": 0.009233726258157077
+    },
+    {
+      "variavel": "taxa_2023",
+      "queda_auc": 0.07821722118251317,
+      "desvio": 0.009200273881971706
+    },
+    {
+      "variavel": "regiao",
+      "queda_auc": 0.04927485185124309,
+      "desvio": 0.005949438090764763
+    },
+    {
+      "variavel": "nivel_oficial_2023",
+      "queda_auc": 0.013779732482989575,
+      "desvio": 0.0034620110298167065
+    },
+    {
+      "variavel": "participacao_2023",
+      "queda_auc": 0.012939407530207022,
+      "desvio": 0.003337235313430671
+    },
+    {
+      "variavel": "esforco_exigido",
+      "queda_auc": 0.009950524459514387,
+      "desvio": 0.003389995502135225
+    },
+    {
+      "variavel": "log_populacao",
+      "queda_auc": 0.00706198570602247,
+      "desvio": 0.003110752395414976
+    },
+    {
+      "variavel": "porte_municipio",
+      "queda_auc": 0.0009536623718985707,
+      "desvio": 0.0007458272862875681
+    }
+  ],
+  "estabilidade": [
+    {
+      "variavel": "sigla_uf",
+      "posicao_media": 1.0,
+      "posicao_min": 1,
+      "posicao_max": 1,
+      "amplitude": 0
+    },
+    {
+      "variavel": "meta_2024",
+      "posicao_media": 2.0,
+      "posicao_min": 2,
+      "posicao_max": 2,
+      "amplitude": 0
+    },
+    {
+      "variavel": "media_portugues_2023",
+      "posicao_media": 3.375,
+      "posicao_min": 3,
+      "posicao_max": 4,
+      "amplitude": 1
+    },
+    {
+      "variavel": "taxa_2023",
+      "posicao_media": 3.625,
+      "posicao_min": 3,
+      "posicao_max": 4,
+      "amplitude": 1
+    },
+    {
+      "variavel": "regiao",
+      "posicao_media": 5.0,
+      "posicao_min": 5,
+      "posicao_max": 5,
+      "amplitude": 0
+    },
+    {
+      "variavel": "nivel_oficial_2023",
+      "posicao_media": 6.25,
+      "posicao_min": 6,
+      "posicao_max": 7,
+      "amplitude": 1
+    },
+    {
+      "variavel": "participacao_2023",
+      "posicao_media": 7.0,
+      "posicao_min": 6,
+      "posicao_max": 8,
+      "amplitude": 2
+    },
+    {
+      "variavel": "esforco_exigido",
+      "posicao_media": 7.75,
+      "posicao_min": 7,
+      "posicao_max": 8,
+      "amplitude": 1
+    },
+    {
+      "variavel": "log_populacao",
+      "posicao_media": 9.0,
+      "posicao_min": 9,
+      "posicao_max": 9,
+      "amplitude": 0
+    },
+    {
+      "variavel": "porte_municipio",
+      "posicao_media": 10.0,
+      "posicao_min": 10,
+      "posicao_max": 10,
+      "amplitude": 0
+    }
+  ],
+  "shap": [
+    {
+      "variavel": "num__meta_2024",
+      "shap_medio": 0.18300416512992698
+    },
+    {
+      "variavel": "num__taxa_2023",
+      "shap_medio": 0.12563962933206843
+    },
+    {
+      "variavel": "num__media_portugues_2023",
+      "shap_medio": 0.11261775197993909
+    },
+    {
+      "variavel": "cat__sigla_uf_BA",
+      "shap_medio": 0.06146470520088727
+    },
+    {
+      "variavel": "num__nivel_oficial_2023",
+      "shap_medio": 0.048523468428682805
+    },
+    {
+      "variavel": "cat__regiao_Sudeste",
+      "shap_medio": 0.04616738282962498
+    },
+    {
+      "variavel": "cat__regiao_Nordeste",
+      "shap_medio": 0.040500121898915636
+    },
+    {
+      "variavel": "num__participacao_2023",
+      "shap_medio": 0.037625406417774766
+    },
+    {
+      "variavel": "num__log_populacao",
+      "shap_medio": 0.03476530789506009
+    },
+    {
+      "variavel": "cat__sigla_uf_SP",
+      "shap_medio": 0.031783827967302225
+    },
+    {
+      "variavel": "cat__sigla_uf_MG",
+      "shap_medio": 0.03167352637471721
+    },
+    {
+      "variavel": "cat__sigla_uf_RS",
+      "shap_medio": 0.028096232116494046
+    },
+    {
+      "variavel": "num__esforco_exigido",
+      "shap_medio": 0.027963034635116908
+    },
+    {
+      "variavel": "cat__regiao_Centro-Oeste",
+      "shap_medio": 0.019482781715280183
+    },
+    {
+      "variavel": "cat__sigla_uf_PE",
+      "shap_medio": 0.019077670194115885
+    },
+    {
+      "variavel": "cat__sigla_uf_SC",
+      "shap_medio": 0.018586077226514227
+    },
+    {
+      "variavel": "cat__sigla_uf_PR",
+      "shap_medio": 0.016648504520577697
+    },
+    {
+      "variavel": "cat__sigla_uf_CE",
+      "shap_medio": 0.0150964391609828
+    },
+    {
+      "variavel": "cat__sigla_uf_GO",
+      "shap_medio": 0.012466688569346983
+    },
+    {
+      "variavel": "cat__porte_municipio_pequeno_I",
+      "shap_medio": 0.010639092745426394
+    },
+    {
+      "variavel": "cat__sigla_uf_ES",
+      "shap_medio": 0.009647872489057976
+    },
+    {
+      "variavel": "cat__sigla_uf_SE",
+      "shap_medio": 0.009406741620027866
+    },
+    {
+      "variavel": "cat__regiao_Norte",
+      "shap_medio": 0.008139489358621178
+    },
+    {
+      "variavel": "cat__sigla_uf_RN",
+      "shap_medio": 0.00785332790978146
+    },
+    {
+      "variavel": "cat__sigla_uf_RJ",
+      "shap_medio": 0.0037949962150156786
+    },
+    {
+      "variavel": "cat__regiao_Sul",
+      "shap_medio": 0.0030929335607159623
+    },
+    {
+      "variavel": "cat__sigla_uf_MS",
+      "shap_medio": 0.0026736596950048897
+    },
+    {
+      "variavel": "cat__sigla_uf_MT",
+      "shap_medio": 0.0023890406009440526
+    },
+    {
+      "variavel": "cat__sigla_uf_AP",
+      "shap_medio": 0.002163000878124822
+    },
+    {
+      "variavel": "cat__porte_municipio_pequeno_II",
+      "shap_medio": 0.0019327853815775955
+    },
+    {
+      "variavel": "cat__sigla_uf_MA",
+      "shap_medio": 0.0018472578066028235
+    },
+    {
+      "variavel": "cat__sigla_uf_AL",
+      "shap_medio": 0.0015692674666926954
+    },
+    {
+      "variavel": "cat__sigla_uf_RO",
+      "shap_medio": 0.0014394606481421446
+    },
+    {
+      "variavel": "cat__porte_municipio_medio",
+      "shap_medio": 0.001301180578569798
+    },
+    {
+      "variavel": "cat__porte_municipio_grande",
+      "shap_medio": 0.0012774152830818202
+    },
+    {
+      "variavel": "cat__sigla_uf_TO",
+      "shap_medio": 0.0011436353794941733
+    },
+    {
+      "variavel": "cat__sigla_uf_AM",
+      "shap_medio": 0.0005755733299835968
+    },
+    {
+      "variavel": "cat__sigla_uf_PA",
+      "shap_medio": 0.00038721726040626874
+    },
+    {
+      "variavel": "cat__sigla_uf_PB",
+      "shap_medio": 0.0003590395233429552
+    },
+    {
+      "variavel": "cat__sigla_uf_PI",
+      "shap_medio": 0.00014688348203422463
+    },
+    {
+      "variavel": "cat__porte_municipio_metropole",
+      "shap_medio": 0.0
+    }
+  ]
+}
