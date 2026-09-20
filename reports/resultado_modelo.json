@@ -1,0 +1,65 @@
+{
+  "semente": 42,
+  "modelo_escolhido": "regressao_logistica",
+  "variaveis": [
+    "sigla_uf",
+    "regiao",
+    "taxa_2023",
+    "media_portugues_2023",
+    "participacao_2023",
+    "meta_2024",
+    "nivel_oficial_2023",
+    "esforco_exigido",
+    "log_populacao",
+    "porte_municipio"
+  ],
+  "municipios": 5232,
+  "proporcao_positivos": 0.5328746177370031,
+  "validacao_cruzada": [
+    {
+      "modelo": "regressao_logistica",
+      "auc": 0.7884431763614682,
+      "auc_desvio": 0.00845964810586876,
+      "acuracia": 0.7135597296243338,
+      "f1": 0.7369679775553409
+    },
+    {
+      "modelo": "random_forest",
+      "auc": 0.7840550138012043,
+      "auc_desvio": 0.00800040270012133,
+      "acuracia": 0.7028555180033796,
+      "f1": 0.7329702818237929
+    },
+    {
+      "modelo": "gradient_boosting",
+      "auc": 0.7630096706265812,
+      "auc_desvio": 0.010599134609106392,
+      "acuracia": 0.6913843754062134,
+      "f1": 0.7154830244074607
+    },
+    {
+      "modelo": "baseline",
+      "auc": 0.5,
+      "auc_desvio": 0.0,
+      "acuracia": 0.532874691277785,
+      "f1": 0.6952617612965062
+    }
+  ],
+  "teste": {
+    "auc": 0.7806146050292697,
+    "acuracia": 0.7064220183486238,
+    "precisao": 0.7061923583662714,
+    "revocacao": 0.7690100430416069,
+    "f1": 0.7362637362637363,
+    "matriz_confusao": [
+      [
+        388,
+        223
+      ],
+      [
+        161,
+        536
+      ]
+    ]
+  }
+}
