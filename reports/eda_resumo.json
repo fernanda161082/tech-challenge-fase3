@@ -1,0 +1,341 @@
+{
+  "visao_geral": {
+    "municipios": 5232,
+    "colunas": 20,
+    "ufs": 24,
+    "ufs_ausentes": [
+      "AC",
+      "DF",
+      "RR"
+    ],
+    "proporcao_atingiu": 0.5329,
+    "nulos_percentual": {}
+  },
+  "distribuicoes": {
+    "taxa_2023": {
+      "media_atingiu": 60.05,
+      "media_nao_atingiu": 60.98,
+      "mediana": 60.96,
+      "assimetria": -0.13
+    },
+    "esforco_exigido": {
+      "media_atingiu": 1.41,
+      "media_nao_atingiu": 1.96,
+      "mediana": 3.15,
+      "assimetria": -2.01
+    },
+    "participacao_2023": {
+      "media_atingiu": 90.9,
+      "media_nao_atingiu": 88.58,
+      "mediana": 90.56,
+      "assimetria": -0.63
+    },
+    "log_populacao": {
+      "media_atingiu": 9.42,
+      "media_nao_atingiu": 9.6,
+      "mediana": 9.4,
+      "assimetria": 0.8
+    },
+    "populacao_assimetria_sem_log": 38.14
+  },
+  "correlacoes": {
+    "constantes": [
+      "meta_2030"
+    ],
+    "pares_alta_correlacao": [
+      {
+        "var_1": "taxa_2023",
+        "var_2": "distancia_2030",
+        "r": -1.0
+      },
+      {
+        "var_1": "taxa_2023",
+        "var_2": "meta_2024",
+        "r": 0.979
+      },
+      {
+        "var_1": "meta_2024",
+        "var_2": "distancia_2030",
+        "r": -0.979
+      },
+      {
+        "var_1": "taxa_2023",
+        "var_2": "nivel_oficial_2023",
+        "r": 0.969
+      },
+      {
+        "var_1": "nivel_oficial_2023",
+        "var_2": "distancia_2030",
+        "r": -0.969
+      },
+      {
+        "var_1": "meta_2024",
+        "var_2": "nivel_oficial_2023",
+        "r": 0.959
+      },
+      {
+        "var_1": "taxa_2023",
+        "var_2": "media_portugues_2023",
+        "r": 0.931
+      },
+      {
+        "var_1": "media_portugues_2023",
+        "var_2": "distancia_2030",
+        "r": -0.931
+      },
+      {
+        "var_1": "media_portugues_2023",
+        "var_2": "nivel_oficial_2023",
+        "r": 0.884
+      },
+      {
+        "var_1": "media_portugues_2023",
+        "var_2": "meta_2024",
+        "r": 0.881
+      },
+      {
+        "var_1": "media_portugues_2023",
+        "var_2": "esforco_exigido",
+        "r": -0.866
+      },
+      {
+        "var_1": "taxa_2023",
+        "var_2": "esforco_exigido",
+        "r": -0.848
+      },
+      {
+        "var_1": "esforco_exigido",
+        "var_2": "distancia_2030",
+        "r": 0.848
+      }
+    ],
+    "redundantes": [
+      {
+        "var_1": "taxa_2023",
+        "var_2": "distancia_2030",
+        "r": -1.0
+      }
+    ]
+  },
+  "padroes": {
+    "media_nacional": 0.5329,
+    "amplitude_entre_ufs_pp": 81.8,
+    "por_uf": {
+      "RS": {
+        "municipios": 421,
+        "atingiu": 0.095
+      },
+      "BA": {
+        "municipios": 394,
+        "atingiu": 0.1904
+      },
+      "AM": {
+        "municipios": 48,
+        "atingiu": 0.2708
+      },
+      "PA": {
+        "municipios": 136,
+        "atingiu": 0.3382
+      },
+      "RJ": {
+        "municipios": 90,
+        "atingiu": 0.4
+      },
+      "AP": {
+        "municipios": 16,
+        "atingiu": 0.4375
+      },
+      "PR": {
+        "municipios": 395,
+        "atingiu": 0.4684
+      },
+      "RN": {
+        "municipios": 139,
+        "atingiu": 0.482
+      },
+      "SE": {
+        "municipios": 75,
+        "atingiu": 0.4933
+      },
+      "PB": {
+        "municipios": 220,
+        "atingiu": 0.5136
+      },
+      "SP": {
+        "municipios": 621,
+        "atingiu": 0.5169
+      },
+      "MA": {
+        "municipios": 216,
+        "atingiu": 0.5185
+      },
+      "RO": {
+        "municipios": 52,
+        "atingiu": 0.5192
+      },
+      "AL": {
+        "municipios": 102,
+        "atingiu": 0.549
+      },
+      "SC": {
+        "municipios": 238,
+        "atingiu": 0.5546
+      },
+      "TO": {
+        "municipios": 137,
+        "atingiu": 0.562
+      },
+      "PI": {
+        "municipios": 224,
+        "atingiu": 0.5848
+      },
+      "PE": {
+        "municipios": 184,
+        "atingiu": 0.6087
+      },
+      "MT": {
+        "municipios": 139,
+        "atingiu": 0.6403
+      },
+      "MS": {
+        "municipios": 79,
+        "atingiu": 0.6582
+      },
+      "ES": {
+        "municipios": 78,
+        "atingiu": 0.7564
+      },
+      "MG": {
+        "municipios": 801,
+        "atingiu": 0.7953
+      },
+      "GO": {
+        "municipios": 243,
+        "atingiu": 0.8066
+      },
+      "CE": {
+        "municipios": 184,
+        "atingiu": 0.913
+      }
+    },
+    "por_porte": {
+      "grande": {
+        "municipios": 295,
+        "atingiu": 0.4339
+      },
+      "medio": {
+        "municipios": 341,
+        "atingiu": 0.4545
+      },
+      "metropole": {
+        "municipios": 17,
+        "atingiu": 0.3529
+      },
+      "pequeno_I": {
+        "municipios": 3506,
+        "atingiu": 0.5565
+      },
+      "pequeno_II": {
+        "municipios": 1073,
+        "atingiu": 0.5107
+      }
+    }
+  },
+  "relevancia": {
+    "auc_univariada": [
+      {
+        "variavel": "sigla_uf (categorica)",
+        "poder_separacao": 0.729,
+        "direcao": "depende da categoria"
+      },
+      {
+        "variavel": "regiao (categorica)",
+        "poder_separacao": 0.64,
+        "direcao": "depende da categoria"
+      },
+      {
+        "variavel": "participacao_2023",
+        "poder_separacao": 0.608,
+        "direcao": "maior -> mais chance"
+      },
+      {
+        "variavel": "populacao",
+        "poder_separacao": 0.543,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "log_populacao",
+        "poder_separacao": 0.543,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "porte_municipio (categorica)",
+        "poder_separacao": 0.528,
+        "direcao": "depende da categoria"
+      },
+      {
+        "variavel": "meta_2024",
+        "poder_separacao": 0.52,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "media_portugues_2023",
+        "poder_separacao": 0.516,
+        "direcao": "maior -> mais chance"
+      },
+      {
+        "variavel": "taxa_2023",
+        "poder_separacao": 0.515,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "nivel_oficial_2023",
+        "poder_separacao": 0.515,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "distancia_2030",
+        "poder_separacao": 0.515,
+        "direcao": "maior -> mais chance"
+      },
+      {
+        "variavel": "esforco_exigido",
+        "poder_separacao": 0.511,
+        "direcao": "maior -> mais chance"
+      }
+    ]
+  },
+  "teto_previsibilidade": {
+    "desvio_padrao_variacao_pp": 16.58,
+    "esforco_mediano_pp": 3.15,
+    "razao_ruido_sinal": 5.3,
+    "proporcao_esforco_negativo": 0.1756,
+    "falharam_mesmo_com_esforco_negativo": 0.4461
+  },
+  "hipotese_participacao": {
+    "faixas": {
+      "abaixo de 85%": {
+        "municipios": 1070,
+        "volatilidade_pp": 16.14,
+        "melhoria_media_pp": 0.28,
+        "atingiu": 0.4019
+      },
+      "85% a 95%": {
+        "municipios": 3039,
+        "volatilidade_pp": 16.3,
+        "melhoria_media_pp": 3.13,
+        "atingiu": 0.536
+      },
+      "95% ou mais": {
+        "municipios": 1123,
+        "volatilidade_pp": 17.46,
+        "melhoria_media_pp": 4.24,
+        "atingiu": 0.6492
+      }
+    },
+    "correlacao_participacao_x_variacao_absoluta": 0.045,
+    "diferenca_volatilidade_pp": 1.31,
+    "diferenca_melhoria_pp": 3.97,
+    "hipotese_sustentada": "B (gestao)"
+  }
+}
