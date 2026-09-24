@@ -61,7 +61,13 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.model_selection import (
+    GridSearchCV,
+    ParameterGrid,
+    StratifiedKFold,
+    cross_validate,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -213,34 +219,116 @@ def catalogo_modelos(semente: int) -> dict:
     }
 
 
-def comparar(X, y, preproc, semente: int) -> pd.DataFrame:
+def grades_de_busca() -> dict:
+    """Valores de hiperparametro testados para cada modelo.
+
+    O prefixo 'modelo__' aponta para a etapa chamada 'modelo' dentro da
+    pipeline. E assim que o GridSearchCV sabe que deve mexer no
+    classificador, e nao no pre-processamento.
+
+    As grades sao pequenas de proposito: cada combinacao e treinada
+    PARTICOES_CV vezes, entao o custo cresce rapido. Os valores foram
+    escolhidos em escala logaritmica (0,01 / 0,1 / 1 / 10), que cobre
+    varias ordens de grandeza com poucos pontos.
+    """
+    return {
+        # C controla a regularizacao: valores pequenos = regularizacao
+        # forte = coeficientes menores = menos risco de sobreajuste.
+        "regressao_logistica": {"modelo__C": [0.01, 0.1, 1.0, 10.0, 100.0]},
+
+        # min_samples_leaf e max_depth limitam o quanto cada arvore pode
+        # se especializar. Sao os freios contra decorar o treino.
+        "random_forest": {
+            "modelo__min_samples_leaf": [1, 5, 15],
+            "modelo__max_depth": [None, 12],
+        },
+
+        # learning_rate baixo aprende devagar e generaliza melhor;
+        # l2_regularization penaliza folhas com valores extremos.
+        "gradient_boosting": {
+            "modelo__learning_rate": [0.03, 0.06, 0.12],
+            "modelo__max_leaf_nodes": [15, 31],
+            "modelo__l2_regularization": [0.0, 1.0],
+        },
+    }
+
+
+def comparar(X, y, preproc, semente: int, buscar: bool = True):
     """Compara os modelos por validacao cruzada estratificada.
 
     Estratificada significa que cada particao preserva a proporcao das
     classes. Sem isso, uma particao poderia ficar com poucos exemplos
     de uma classe e distorcer a metrica.
+
+    Com buscar=True, cada modelo passa por um GridSearchCV: em vez de
+    um unico conjunto de hiperparametros escolhido na mao, o codigo
+    testa varias combinacoes e fica com a melhor.
+
+    POR QUE A BUSCA RODA SO NO TREINO
+    ---------------------------------
+    X e y aqui sao APENAS o conjunto de treino. Escolher hiperparametros
+    olhando o teste seria uma forma silenciosa de vazamento: o teste
+    deixaria de ser dado novo e viraria parte do processo de decisao.
+    A busca usa validacao cruzada dentro do treino, e o teste continua
+    intocado ate a avaliacao final.
     """
     cv = StratifiedKFold(n_splits=PARTICOES_CV, shuffle=True, random_state=semente)
+    grades = grades_de_busca() if buscar else {}
     linhas = []
+    ajustados = {}
 
     for nome, modelo in catalogo_modelos(semente).items():
         pipeline = Pipeline([("preproc", preproc), ("modelo", modelo)])
+        grade = grades.get(nome)
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            r = cross_validate(
-                pipeline, X, y, cv=cv,
-                scoring=["roc_auc", "accuracy", "f1"],
-                n_jobs=-1, error_score="raise",
-            )
-        linhas.append({
-            "modelo": nome,
-            "auc": r["test_roc_auc"].mean(),
-            "auc_desvio": r["test_roc_auc"].std(),
-            "acuracia": r["test_accuracy"].mean(),
-            "f1": r["test_f1"].mean(),
-        })
 
-    return pd.DataFrame(linhas).sort_values("auc", ascending=False)
+            if grade:
+                busca = GridSearchCV(
+                    pipeline, grade, scoring="roc_auc", cv=cv,
+                    n_jobs=-1, refit=True, error_score="raise",
+                )
+                busca.fit(X, y)
+
+                # O indice do melhor resultado permite recuperar o
+                # desvio-padrao daquela combinacao especifica.
+                i = busca.best_index_
+                resultados = busca.cv_results_
+                linha = {
+                    "modelo": nome,
+                    "auc": float(busca.best_score_),
+                    "auc_desvio": float(resultados["std_test_score"][i]),
+                    "combinacoes": int(len(resultados["params"])),
+                    "pior_auc": float(np.min(resultados["mean_test_score"])),
+                    "parametros": {
+                        k.replace("modelo__", ""): v
+                        for k, v in busca.best_params_.items()
+                    },
+                }
+                ajustados[nome] = busca.best_estimator_
+            else:
+                # Sem grade (baseline) ou com --sem-busca: avaliacao
+                # simples, com os valores padrao.
+                r = cross_validate(
+                    pipeline, X, y, cv=cv, scoring=["roc_auc"],
+                    n_jobs=-1, error_score="raise",
+                )
+                linha = {
+                    "modelo": nome,
+                    "auc": float(r["test_roc_auc"].mean()),
+                    "auc_desvio": float(r["test_roc_auc"].std()),
+                    "combinacoes": 1,
+                    "pior_auc": float(r["test_roc_auc"].mean()),
+                    "parametros": {},
+                }
+                pipeline.fit(X, y)
+                ajustados[nome] = pipeline
+
+        linhas.append(linha)
+
+    tabela = pd.DataFrame(linhas).sort_values("auc", ascending=False)
+    return tabela, ajustados
 
 
 def avaliar_no_teste(pipeline, X_teste, y_teste) -> dict:
@@ -264,6 +352,8 @@ def main() -> int:
                         help="semente aleatoria, para reprodutibilidade")
     parser.add_argument("--alta-cardinalidade", action="store_true",
                         help="inclui microrregiao e mesorregiao via TargetEncoder")
+    parser.add_argument("--sem-busca", action="store_true",
+                        help="pula a otimizacao de hiperparametros (mais rapido)")
     args = parser.parse_args()
 
     print("\nTreinamento do modelo preditivo")
@@ -286,13 +376,34 @@ def main() -> int:
 
     preproc = montar_preprocessador(X, args.alta_cardinalidade)
 
-    print(f"\n  Comparacao por validacao cruzada ({PARTICOES_CV} particoes)")
+    buscar = not args.sem_busca
+    if buscar:
+        total = sum(len(ParameterGrid(g)) for g in grades_de_busca().values())
+        print(f"\n  Otimizacao de hiperparametros + validacao cruzada "
+              f"({PARTICOES_CV} particoes)")
+        print(f"  {total} combinacoes x {PARTICOES_CV} particoes = "
+              f"{total * PARTICOES_CV} treinos. Pode levar alguns minutos.")
+    else:
+        print(f"\n  Comparacao por validacao cruzada ({PARTICOES_CV} particoes)")
+        print("  (sem otimizacao: --sem-busca)")
     print("  " + "-" * 72)
-    resultados = comparar(X_treino, y_treino, preproc, args.semente)
-    print(f"  {'modelo':22} {'AUC':>7} {'desvio':>8} {'acuracia':>10} {'F1':>7}")
+
+    resultados, ajustados = comparar(X_treino, y_treino, preproc,
+                                     args.semente, buscar=buscar)
+
+    print(f"  {'modelo':22} {'AUC':>7} {'desvio':>8} {'combin.':>8} {'pior AUC':>9}")
     for _, r in resultados.iterrows():
         print(f"  {r.modelo:22} {r.auc:7.3f} {r.auc_desvio:8.3f} "
-              f"{r.acuracia:10.3f} {r.f1:7.3f}")
+              f"{int(r.combinacoes):8} {r.pior_auc:9.3f}")
+
+    if buscar:
+        print("\n  Melhores hiperparametros encontrados:")
+        for _, r in resultados.iterrows():
+            if r.parametros:
+                itens = ", ".join(f"{k}={v}" for k, v in r.parametros.items())
+                ganho = r.auc - r.pior_auc
+                print(f"    {r.modelo:22} {itens}")
+                print(f"    {'':22} ganho sobre a pior combinacao: {ganho:+.3f}")
 
     vencedor = resultados.iloc[0]
     piso = resultados[resultados.modelo == "baseline"].auc.iloc[0]
@@ -302,14 +413,11 @@ def main() -> int:
     if vencedor.auc - piso < 0.05:
         print("  [ATENCAO] ganho pequeno - o modelo aprendeu pouco alem do acaso")
 
-    # ---- treina o vencedor em todo o treino e avalia no teste ----
-    modelo_final = Pipeline([
-        ("preproc", preproc),
-        ("modelo", catalogo_modelos(args.semente)[vencedor.modelo]),
-    ])
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        modelo_final.fit(X_treino, y_treino)
+    # ---- avalia o vencedor no teste ----
+    # O GridSearchCV ja reajustou o melhor conjunto de hiperparametros
+    # em TODO o conjunto de treino (refit=True), entao o modelo pronto
+    # e simplesmente o que a busca devolveu.
+    modelo_final = ajustados[vencedor.modelo]
 
     metricas = avaliar_no_teste(modelo_final, X_teste, y_teste)
 
@@ -346,6 +454,8 @@ def main() -> int:
     relatorio = {
         "semente": args.semente,
         "modelo_escolhido": vencedor.modelo,
+        "busca_hiperparametros": bool(buscar),
+        "hiperparametros_escolhidos": vencedor.parametros,
         "variaveis": list(X.columns),
         "municipios": int(len(X)),
         "proporcao_positivos": float(y.mean()),

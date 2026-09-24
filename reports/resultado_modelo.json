@@ -1,6 +1,10 @@
 {
   "semente": 42,
   "modelo_escolhido": "regressao_logistica",
+  "busca_hiperparametros": true,
+  "hiperparametros_escolhidos": {
+    "C": 10.0
+  },
   "variaveis": [
     "sigla_uf",
     "regiao",
@@ -18,47 +22,60 @@
   "validacao_cruzada": [
     {
       "modelo": "regressao_logistica",
-      "auc": 0.7884431763614682,
-      "auc_desvio": 0.00845964810586876,
-      "acuracia": 0.7135597296243338,
-      "f1": 0.7369679775553409
+      "auc": 0.7884974544061479,
+      "auc_desvio": 0.008531743354147544,
+      "combinacoes": 5,
+      "pior_auc": 0.7578643334959895,
+      "parametros": {
+        "C": 10.0
+      }
     },
     {
       "modelo": "random_forest",
-      "auc": 0.7840550138012043,
-      "auc_desvio": 0.00800040270012133,
-      "acuracia": 0.7028555180033796,
-      "f1": 0.7329702818237929
+      "auc": 0.7845378417040408,
+      "auc_desvio": 0.007624725333762988,
+      "combinacoes": 6,
+      "pior_auc": 0.7700309016589257,
+      "parametros": {
+        "max_depth": 12,
+        "min_samples_leaf": 5
+      }
     },
     {
       "modelo": "gradient_boosting",
-      "auc": 0.7630096706265812,
-      "auc_desvio": 0.010599134609106392,
-      "acuracia": 0.6913843754062134,
-      "f1": 0.7154830244074607
+      "auc": 0.7797107292263962,
+      "auc_desvio": 0.009200592723402675,
+      "combinacoes": 12,
+      "pior_auc": 0.7474738017007799,
+      "parametros": {
+        "l2_regularization": 1.0,
+        "learning_rate": 0.03,
+        "max_leaf_nodes": 15
+      }
     },
     {
       "modelo": "baseline",
       "auc": 0.5,
       "auc_desvio": 0.0,
-      "acuracia": 0.532874691277785,
-      "f1": 0.6952617612965062
+      "combinacoes": 1,
+      "pior_auc": 0.5,
+      "parametros": {}
     }
   ],
   "teste": {
-    "auc": 0.7806146050292697,
-    "acuracia": 0.7064220183486238,
-    "precisao": 0.7061923583662714,
-    "revocacao": 0.7690100430416069,
-    "f1": 0.7362637362637363,
+    "auc": 0.780926909105425,
+    "acuracia": 0.7102446483180428,
+    "precisao": 0.7097625329815304,
+    "revocacao": 0.7718794835007173,
+    "f1": 0.7395189003436426,
     "matriz_confusao": [
       [
-        388,
-        223
+        391,
+        220
       ],
       [
-        161,
-        536
+        159,
+        538
       ]
     ]
   }
