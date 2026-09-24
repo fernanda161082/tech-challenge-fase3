@@ -25,6 +25,7 @@ Saidas:
     images/eda_distribuicoes.png
     images/eda_correlacoes.png
     images/eda_atingimento_por_uf.png
+    images/eda_riqueza_vs_desempenho.png
     images/eda_teto_previsibilidade.png
     images/eda_hipotese_participacao.png
     reports/eda_resumo.json
@@ -419,6 +420,98 @@ def codificar_por_alvo(coluna: pd.DataFrame, alvo: pd.Series) -> np.ndarray:
         )
 
 
+def riqueza_e_desempenho(base: pd.DataFrame) -> dict:
+    """Testa se a riqueza do estado explica o desempenho educacional.
+
+    A UF e a variavel mais importante do modelo. Uma explicacao
+    possivel e que "estado" seja apenas "riqueza" disfarcada de
+    geografia. Esta secao confronta as duas grandezas no nivel em que
+    o efeito aparece: o estadual.
+
+    Se a hipotese economica valesse, os pontos formariam uma diagonal
+    ascendente - quanto mais rico o estado, maior o atingimento.
+    """
+    titulo("4.1 Riqueza do estado explica o desempenho?")
+
+    coluna = "pib_per_capita" if "pib_per_capita" in base.columns else None
+    if coluna is None:
+        print("    [AUSENTE] PIB por habitante - secao pulada")
+        print("              rode antes: python src/preprocessing/baixar_dados_ibge.py")
+        return {}
+
+    por_uf = base.groupby("sigla_uf").agg(
+        municipios=(ALVO, "size"),
+        pib_mediano=(coluna, "median"),
+        atingiu=(ALVO, "mean"),
+    ).dropna()
+
+    # Correlacao entre a riqueza mediana do estado e a proporcao de
+    # municipios que atingiram a meta. Uma unidade por UF: 24 pontos.
+    r = float(np.corrcoef(por_uf["pib_mediano"], por_uf["atingiu"])[0, 1])
+
+    # Mesma pergunta dentro de cada estado, para separar o efeito
+    # entre estados do efeito entre municipios do mesmo estado.
+    dentro = base.groupby("sigla_uf").apply(
+        lambda g: np.corrcoef(g[coluna], g[ALVO])[0, 1]
+        if g[coluna].nunique() > 1 and g[ALVO].nunique() > 1 else np.nan,
+        include_groups=False,
+    ).dropna()
+
+    print(f"    correlacao entre UFs   (riqueza x atingimento): {r:+.3f}")
+    print(f"    correlacao media dentro das UFs               : {dentro.mean():+.3f}")
+    print(f"    PIB por habitante mediano: maior {por_uf.pib_mediano.idxmax()} "
+          f"R$ {por_uf.pib_mediano.max():,.0f} | menor {por_uf.pib_mediano.idxmin()} "
+          f"R$ {por_uf.pib_mediano.min():,.0f}")
+
+    if abs(r) < 0.3:
+        print("    -> a riqueza do estado NAO explica o desempenho educacional")
+        print("       o efeito da UF no modelo e institucional, nao economico")
+    else:
+        print("    -> ha associacao entre riqueza e desempenho estadual")
+
+    # ---- grafico ----
+    fig, ax = plt.subplots(figsize=(9, 6))
+    destaques = {"CE": COR_POSITIVA, "RS": COR_NEGATIVA, "BA": COR_NEGATIVA}
+
+    for uf, linha in por_uf.iterrows():
+        cor = destaques.get(uf, COR_NEUTRA)
+        destaque = uf in destaques
+        ax.scatter(linha.pib_mediano, linha.atingiu * 100,
+                   s=90 if destaque else 55, color=cor,
+                   edgecolor="white", linewidth=1.5, zorder=3)
+        ax.annotate(uf, (linha.pib_mediano, linha.atingiu * 100),
+                    xytext=(0, 9 if linha.atingiu < 0.75 else -16),
+                    textcoords="offset points", ha="center", fontsize=9,
+                    color=COR_TEXTO if destaque else COR_TEXTO_SUAVE,
+                    fontweight="bold" if destaque else "normal")
+
+    ax.axhline(base[ALVO].mean() * 100, color=COR_GRID, linewidth=1, zorder=1)
+    # Separador de milhar no padrao brasileiro, para o eixo ficar legivel.
+    ax.xaxis.set_major_formatter(
+        plt.FuncFormatter(lambda v, _: f"{v:,.0f}".replace(",", "."))
+    )
+    ax.set_xlabel("PIB por habitante — mediana dos municípios do estado (R$)",
+                  fontsize=9, color=COR_TEXTO_SUAVE)
+    ax.set_ylabel("% de municípios que atingiram a meta", fontsize=9,
+                  color=COR_TEXTO_SUAVE)
+    veredito = ("Riqueza do estado não explica alfabetização"
+                if abs(r) < 0.3 else "Riqueza e desempenho andam juntos entre os estados")
+    ax.set_title(f"{veredito} — correlação entre UFs: {r:+.2f}",
+                 fontsize=11, color=COR_TEXTO, loc="left")
+    estilizar(ax)
+    ax.grid(axis="x", color=COR_GRID, linewidth=0.8)
+    fig.tight_layout()
+    salvar(fig, "eda_riqueza_vs_desempenho.png")
+
+    return {
+        "correlacao_entre_ufs": round(r, 3),
+        "correlacao_media_dentro_das_ufs": round(float(dentro.mean()), 3),
+        "por_uf": {uf: {"pib_mediano": round(float(l.pib_mediano), 2),
+                        "atingiu": round(float(l.atingiu), 4)}
+                   for uf, l in por_uf.iterrows()},
+    }
+
+
 def relevancia_individual(base: pd.DataFrame) -> dict:
     """AUC de cada variavel usada sozinha para separar as classes.
 
@@ -653,6 +746,7 @@ def main() -> int:
         "distribuicoes": distribuicoes(base),
         "correlacoes": correlacoes(base),
         "padroes": padroes(base),
+        "riqueza_e_desempenho": riqueza_e_desempenho(base),
         "relevancia": relevancia_individual(base),
         "teto_previsibilidade": teto_previsibilidade(base),
         "hipotese_participacao": hipotese_participacao(base),

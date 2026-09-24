@@ -39,7 +39,7 @@ Trata-se de um problema de **classificação binária supervisionada**:
 |---|---|
 | **Unidade de análise** | Município × rede municipal de ensino |
 | **Variável-alvo** | `atingiu_meta` — 1 se o indicador de 2024 ≥ meta de 2024, 0 caso contrário |
-| **Variáveis preditoras** | Desempenho de 2023, meta de 2024, esforço exigido, participação na avaliação, UF, porte e território |
+| **Variáveis preditoras** | Desempenho de 2023, meta de 2024, esforço exigido, participação na avaliação, UF, porte, território e PIB por habitante |
 | **Separação temporal** | Features de **2023** → alvo de **2024** |
 
 ### 2.3 Por que o município e não o aluno
@@ -69,6 +69,7 @@ A base parte da **camada Gold do pipeline construído na Fase 2** (arquitetura M
 | Metas de alfabetização | INEP, via Gold da Fase 2 | Meta individualizada por município e ano |
 | Localidades | API IBGE `/localidades/municipios` | Nome, microrregião, mesorregião, região imediata e intermediária, UF |
 | População | API SIDRA, agregado 6579 (2021) | População residente estimada por município |
+| PIB municipal | API SIDRA, agregado 5938 (2021) | Produto Interno Bruto municipal, base do PIB por habitante |
 
 **Conferência da origem.** As variáveis consumidas da Gold foram validadas contra os microdados originais do INEP por reconstrução independente: a base analítica foi remontada a partir dos CSVs de origem, aplicando as regras diretamente na fonte, e chegou aos mesmos **5.232 municípios** e à mesma distribuição do alvo (**53,3% / 46,7%**).
 
@@ -95,6 +96,9 @@ O `esforco_exigido` traduz a meta em quanto o município precisa **crescer** —
 
 - **`log_populacao`** — `np.log1p(populacao)`. A população municipal brasileira é fortemente assimétrica: milhares de municípios com poucos milhares de habitantes e um punhado de metrópoles de milhões. O logaritmo aproxima a distribuição de uma normal, o que ajuda modelos lineares.
 - **`porte_municipio`** — faixas usadas em política pública brasileira (pequeno I < 20 mil, pequeno II < 50 mil, médio < 100 mil, grande < 900 mil, metrópole ≥ 900 mil). Os cortes acompanham a mudança de **natureza** da gestão: administrar 5 mil habitantes é um problema diferente de administrar 500 mil.
+- **`log_pib_per_capita`** — variável socioeconômica. O IBGE publica o PIB municipal em mil reais; o script converte para reais, divide pela população e aplica o logaritmo, pela mesma assimetria da população (municípios com refinaria, mineração ou porto distorcem a escala). O ano de referência é 2021, o mais recente da série.
+
+A variável do PIB não é fixada por um código numérico no script: `baixar_dados_ibge.py` consulta antes os metadados do agregado 5938 e escolhe a variável pelo nome, preferindo o PIB per capita quando publicado e caindo para o PIB total em caso contrário. A unidade de medida vem junto e é conferida, porque um erro de fator 1.000 não geraria erro nenhum — só um modelo treinado com números errados.
 
 O script mede a cobertura do join e faz uma **conferência cruzada**: a UF derivada do prefixo do código IBGE na Fase 2 é comparada com a UF que o próprio IBGE informa. Zero divergências — validação por fonte independente, que é mais forte do que qualquer verificação interna.
 
@@ -104,7 +108,7 @@ O script mede a cobertura do join e faz uma **conferência cruzada**: a UF deriv
 |---|---|
 | Municípios | **5.232** |
 | Cobertura do enriquecimento IBGE | **100%** |
-| Variáveis disponíveis para o modelo | 13 |
+| Variáveis candidatas ao modelo | 15 (11 após os descartes da EDA) |
 | Valores nulos nas variáveis do modelo | **0** |
 | Distribuição do alvo | 53,3% atingiram a meta / 46,7% não atingiram |
 | UFs representadas | 24 |
@@ -127,12 +131,13 @@ Gold da Fase 2
       │
       ├─ baixar_dados_ibge.py ────────► data/raw/*.csv               (aquisição)
       │
-      ├─ enriquecer_base.py ──────────► base_enriquecida.parquet     (5.232 × 20)
+      ├─ enriquecer_base.py ──────────► base_enriquecida.parquet     (5.232 × 22)
       │
       ├─ analise_exploratoria.py ─────► reports/eda_resumo.json
       │                                  images/eda_distribuicoes.png
       │                                  images/eda_correlacoes.png
       │                                  images/eda_atingimento_por_uf.png
+      │                                  images/eda_riqueza_vs_desempenho.png
       │                                  images/eda_teto_previsibilidade.png
       │                                  images/eda_hipotese_participacao.png
       │
@@ -171,6 +176,19 @@ As curvas de desempenho de 2023 quase se sobrepõem entre quem atingiu e quem n�
 
 Ceará 91,3% contra Rio Grande do Sul 9,5%: **82 pontos percentuais** de amplitude entre estados, contra 12 pontos entre faixas de porte populacional.
 
+**Riqueza do estado e desempenho educacional**
+
+![Riqueza e desempenho](images/eda_riqueza_vs_desempenho.png)
+
+| Medida | Valor |
+|---|---|
+| Correlação entre UFs (PIB mediano × % que atingiu) | **−0,011** |
+| Correlação média dentro de cada UF | −0,008 |
+| PIB por habitante mediano — maior | Mato Grosso, R$ 50.940 |
+| PIB por habitante mediano — menor | Maranhão, R$ 9.177 |
+
+A riqueza varia cinco vezes e meia entre os estados e **não explica nada** do desempenho em alfabetização — nem entre estados, nem entre municípios do mesmo estado. A seção 9.1 desenvolve o que isso significa.
+
 **Poder de separação de cada variável isolada**
 
 Medindo a AUC de cada variável usada sozinha (0,5 = não separa nada):
@@ -181,10 +199,11 @@ Medindo a AUC de cada variável usada sozinha (0,5 = não separa nada):
 | `regiao` | 0,640 |
 | `participacao_2023` | 0,608 |
 | `log_populacao` | 0,543 |
+| `log_pib_per_capita` | 0,522 |
 | `taxa_2023` | 0,515 |
 | `esforco_exigido` | 0,511 |
 
-O modelo completo chega a 0,781 e a **UF sozinha já chega a 0,729**. É a medida mais direta da ancoragem estadual discutida na seção 9.1 — e ela apareceu na exploração, antes de qualquer treino. Para as categóricas, cada categoria foi substituída pela taxa de atingimento do grupo, calculada por validação cruzada, de modo que o valor de cada município é estimado sem ele próprio.
+O modelo completo chega a 0,780 e a **UF sozinha já chega a 0,729**. É a medida mais direta da ancoragem estadual discutida na seção 9.1 — e ela apareceu na exploração, antes de qualquer treino. Para as categóricas, cada categoria foi substituída pela taxa de atingimento do grupo, calculada por validação cruzada, de modo que o valor de cada município é estimado sem ele próprio.
 
 **Hipóteses testadas**
 
@@ -237,7 +256,7 @@ Se a mediana usada na imputação fosse calculada sobre a base completa, ela car
 ### 4.3 Variáveis descartadas na análise exploratória
 
 ```python
-DESCARTADAS = ["meta_2030", "distancia_2030", "populacao"]
+DESCARTADAS = ["meta_2030", "distancia_2030", "populacao", "pib_per_capita"]
 ```
 
 | Variável | Motivo |
@@ -245,6 +264,7 @@ DESCARTADAS = ["meta_2030", "distancia_2030", "populacao"]
 | `meta_2030` | **Constante**: todos os 5.232 municípios têm valor 80. Variância zero não carrega informação. |
 | `distancia_2030` | Correlação **−1,000** com `taxa_2023`. É literalmente `80 − taxa_2023`, a mesma informação com outro nome. |
 | `populacao` | Redundante com `log_populacao`, que é a forma mais adequada para modelos lineares. |
+| `pib_per_capita` | Mesma razão: entra no modelo como `log_pib_per_capita`. |
 
 Registro honesto: `distancia_2030` foi criada por nós acreditando que capturasse "desafio de longo prazo". A análise exploratória mostrou que era uma transformação determinística de uma variável já presente. **É exatamente para isso que a EDA existe** — descobrir isso antes de treinar, e não depois de interpretar coeficientes de uma variável fantasma.
 
@@ -268,7 +288,7 @@ O conjunto de teste é usado **uma única vez**, ao final. Toda a comparação e
 | Modelo | AUC (validação cruzada, após otimização) | Papel |
 |---|---|---|
 | Baseline (`DummyClassifier`) | 0,500 | Piso de comparação |
-| **Regressão Logística** | **0,788** | **Modelo escolhido** |
+| **Regressão Logística** | **0,790** | **Modelo escolhido** |
 | Random Forest | 0,785 | Ensemble de árvores |
 | Gradient Boosting | 0,780 | Ensemble sequencial |
 
@@ -295,7 +315,7 @@ Os valores de hiperparâmetro não foram escolhidos à mão: cada modelo passou 
 | Modelo | Hiperparâmetros testados | Combinações | Melhor configuração |
 |---|---|---|---|
 | Regressão Logística | `C` ∈ {0,01 · 0,1 · 1 · 10 · 100} | 5 | `C = 10` |
-| Random Forest | `min_samples_leaf` ∈ {1 · 5 · 15}, `max_depth` ∈ {None · 12} | 6 | `max_depth = 12`, `min_samples_leaf = 5` |
+| Random Forest | `min_samples_leaf` ∈ {1 · 5 · 15}, `max_depth` ∈ {None · 12} | 6 | `max_depth = None`, `min_samples_leaf = 5` |
 | Gradient Boosting | `learning_rate` ∈ {0,03 · 0,06 · 0,12}, `max_leaf_nodes` ∈ {15 · 31}, `l2_regularization` ∈ {0 · 1} | 12 | `learning_rate = 0,03`, `max_leaf_nodes = 15`, `l2 = 1,0` |
 
 Total: **23 combinações × 5 partições = 115 treinos**.
@@ -308,17 +328,17 @@ Todos os hiperparâmetros da grade são **freios contra o sobreajuste**: `C` men
 
 | Modelo | AUC (melhor) | AUC (pior combinação) | Amplitude |
 |---|---|---|---|
-| Regressão Logística | 0,788 | 0,758 | 0,030 |
-| Random Forest | 0,785 | 0,770 | 0,015 |
-| Gradient Boosting | 0,780 | 0,747 | **0,033** |
+| Regressão Logística | 0,790 | 0,758 | 0,032 |
+| Random Forest | 0,785 | 0,774 | 0,011 |
+| Gradient Boosting | 0,780 | 0,751 | **0,029** |
 
 Três leituras:
 
 1. **A comparação entre modelos ficou justa.** Antes da busca, o Random Forest marcava 0,773 com hiperparâmetros escolhidos manualmente; otimizado, chega a 0,785. A vantagem da regressão logística era em parte artefato de concorrentes mal configurados — e, mesmo com a correção, ela continua à frente.
 
-2. **Configurar bem importa mais do que escolher o modelo.** A diferença entre os três modelos bem configurados é de 0,008; dentro do gradient boosting, entre a melhor e a pior configuração, é de 0,033 — quatro vezes maior.
+2. **Configurar bem importa mais do que escolher o modelo.** A diferença entre os três modelos bem configurados é de 0,010; dentro do gradient boosting, entre a melhor e a pior configuração, é de 0,029 — quase três vezes maior.
 
-3. **O ganho final foi marginal, como esperado.** A AUC no teste permaneceu em 0,781 e a diferença entre validação e teste continuou em 0,008. É coerente com o teto de previsibilidade da seção 9.2: com ruído cerca de cinco vezes maior que o sinal, ajuste fino não produz saltos. Um salto grande aqui seria motivo de desconfiança, não de comemoração.
+3. **O ganho final foi marginal, como esperado.** A AUC no teste ficou em 0,780 e a diferença entre validação e teste em 0,009. É coerente com o teto de previsibilidade da seção 9.2: com ruído cerca de cinco vezes maior que o sinal, ajuste fino não produz saltos. Um salto grande aqui seria motivo de desconfiança, não de comemoração.
 
 A busca pode ser desligada com `--sem-busca` para reexecuções rápidas do pipeline.
 
@@ -345,27 +365,27 @@ Na regressão logística, cada coeficiente é uma frase legível: *"cada ponto p
 
 | Métrica | Valor | Leitura |
 |---|---|---|
-| **AUC-ROC** | **0,781** | Dados dois municípios ao acaso, um que atingiu e outro que não, o modelo ordena corretamente em 78,1% das vezes |
-| Acurácia | 0,710 | 71,0% das classificações corretas (baseline: 53,3%) |
-| Precisão | 0,710 | Dos sinalizados como "vai atingir", 71,0% de fato atingiram |
-| **Recall** | **0,772** | Dos que realmente atingiram, 77,2% foram identificados |
-| F1-Score | 0,740 | Média harmônica entre precisão e recall |
+| **AUC-ROC** | **0,780** | Dados dois municípios ao acaso, um que atingiu e outro que não, o modelo ordena corretamente em 78,0% das vezes |
+| Acurácia | 0,703 | 70,3% das classificações corretas (baseline: 53,3%) |
+| Precisão | 0,703 | Dos sinalizados como "vai atingir", 70,3% de fato atingiram |
+| **Recall** | **0,765** | Dos que realmente atingiram, 76,5% foram identificados |
+| F1-Score | 0,733 | Média harmônica entre precisão e recall |
 
 ### 6.2 Generalização
 
 | AUC validação cruzada | AUC teste | Diferença |
 |---|---|---|
-| 0,788 | 0,781 | **0,008** |
+| 0,790 | 0,780 | **0,009** |
 
-Uma diferença de 0,008 entre validação e teste indica **ausência de sobreajuste**. O modelo aprendeu padrões do fenômeno, não particularidades do conjunto de treino. Se o teste tivesse ficado muito abaixo da validação, seria sinal de memorização; muito acima, sinal de uma divisão de dados favorável por acaso — ambos motivos para desconfiar.
+Uma diferença de 0,009 entre validação e teste indica **ausência de sobreajuste**. O modelo aprendeu padrões do fenômeno, não particularidades do conjunto de treino. Se o teste tivesse ficado muito abaixo da validação, seria sinal de memorização; muito acima, sinal de uma divisão de dados favorável por acaso — ambos motivos para desconfiar.
 
 ### 6.3 Por que AUC é a métrica principal
 
-A acurácia depende do limiar escolhido (0,5 por padrão) e é enganosa em bases desbalanceadas. A AUC avalia a **capacidade de ordenação** do modelo em todos os limiares possíveis, e é isso que importa no uso real: o gestor não tem orçamento para agir em 2.302 municípios simultaneamente. Ele precisa de uma **fila de prioridade**, e a AUC mede exatamente a qualidade dessa fila.
+A acurácia depende do limiar escolhido (0,5 por padrão) e é enganosa em bases desbalanceadas. A AUC avalia a **capacidade de ordenação** do modelo em todos os limiares possíveis, e é isso que importa no uso real: o gestor não tem orçamento para agir em 2.299 municípios simultaneamente. Ele precisa de uma **fila de prioridade**, e a AUC mede exatamente a qualidade dessa fila.
 
 ### 6.4 O trade-off precisão × recall neste contexto
 
-O modelo tem recall (0,772) superior à precisão (0,710), e isso é **desejável aqui**.
+O modelo tem recall (0,765) superior à precisão (0,703), e isso é **desejável aqui**.
 
 Os dois erros possíveis têm custos assimétricos:
 
@@ -384,12 +404,13 @@ Em política pública de alfabetização, o segundo erro é incomparavelmente ma
 
 | Posição | Variável | Importância |
 |---|---|---|
-| 1 | `sigla_uf` | 0,1680 |
+| 1 | `sigla_uf` | 0,1713 |
 | 2 | `esforco_exigido` | — |
 | 3 | `meta_2024` | — |
 | … | … | … |
-| — | `log_populacao` | 0,0077 |
-| — | `porte_municipio` | 0,0011 |
+| — | `log_pib_per_capita` | 0,0024 |
+| — | `log_populacao` | 0,0074 |
+| — | `porte_municipio` | 0,0005 |
 
 A *permutation importance* mede o quanto o desempenho do modelo **piora** quando os valores de uma variável são embaralhados. Se embaralhar não muda nada, a variável não estava sendo usada. É uma medida mais honesta que a importância interna dos algoritmos, porque avalia o modelo já treinado no dado de teste.
 
@@ -399,9 +420,9 @@ A *permutation importance* mede o quanto o desempenho do modelo **piora** quando
 
 Dois coeficientes merecem destaque:
 
-**`meta_2024`: −1,276.** Quanto maior a meta, menor a chance de atingi-la. Este é o **teste de sanidade** do modelo: se o sinal fosse positivo, haveria erro em algum ponto do pipeline. O modelo aprendeu algo que sabemos ser verdade, o que aumenta a confiança no que ele aprendeu e não sabíamos.
+**`meta_2024`: −1,310.** Quanto maior a meta, menor a chance de atingi-la. Este é o **teste de sanidade** do modelo: se o sinal fosse positivo, haveria erro em algum ponto do pipeline. O modelo aprendeu algo que sabemos ser verdade, o que aumenta a confiança no que ele aprendeu e não sabíamos.
 
-**UF: Ceará +2,218 / Bahia −2,134.** Um município cearense tem probabilidade substancialmente maior de atingir a meta que um baiano com as mesmas características observáveis. O Ceará é, historicamente, referência nacional em alfabetização — o modelo captou de forma independente um fato reconhecido na literatura de política educacional brasileira.
+**UF: Ceará +2,267 / Bahia −2,120.** Um município cearense tem probabilidade substancialmente maior de atingir a meta que um baiano com as mesmas características observáveis. O Ceará é, historicamente, referência nacional em alfabetização — o modelo captou de forma independente um fato reconhecido na literatura de política educacional brasileira.
 
 ### 7.3 Teste de estabilidade do ranking
 
@@ -419,11 +440,13 @@ A análise SHAP (`src/evaluation/interpretar_modelo.py`) decompõe cada previsã
 
 ### 7.5 População não importa
 
-`log_populacao` (0,0077) e `porte_municipio` (0,0011) têm importância praticamente nula **no modelo**.
+`log_populacao` (0,0074), `log_pib_per_capita` (0,0024) e `porte_municipio` (0,0005) têm importância praticamente nula **no modelo**.
 
-Isoladamente, porém, o tamanho mostra alguma associação: na análise exploratória, `log_populacao` tem AUC univariada de 0,543, e os municípios pequenos atingem mais a meta (≈56%) do que os grandes (≈43%) — o contrário do que a intuição sugere. Essa diferença **desaparece quando a UF entra no modelo**, o que indica que ela vinha em boa parte da composição estadual: os estados com melhor desempenho concentram muitos municípios pequenos.
+Isoladamente, ambos mostram alguma associação fraca: `log_populacao` tem AUC univariada de 0,543 e `log_pib_per_capita`, 0,522 — e nos dois casos no sentido **"maior → menos chance"**. Municípios pequenos atingem mais a meta (≈56%) do que os grandes (≈43%), o contrário do que a intuição sugere, e municípios mais ricos atingem ligeiramente menos.
 
-É um **resultado negativo com valor**. A intuição comum é que municípios pequenos teriam mais dificuldade — menos estrutura, menos quadro técnico, menos orçamento. O dado não sustenta isso, nem sustenta o inverso como efeito próprio do tamanho. Políticas desenhadas sobre a premissa "pequenos precisam de mais apoio" estariam segmentando pela variável errada.
+As duas diferenças **desaparecem quando a UF entra no modelo**, o que indica que vinham da composição estadual: os estados com melhor desempenho concentram muitos municípios pequenos e não são os mais ricos.
+
+São **resultados negativos com valor**. A intuição comum é que municípios pequenos ou pobres teriam mais dificuldade — menos estrutura, menos quadro técnico, menos orçamento. O dado não sustenta isso, nem sustenta o inverso como efeito próprio do tamanho ou da renda. Políticas desenhadas sobre a premissa "pequenos e pobres precisam de mais apoio" estariam segmentando pelas variáveis erradas.
 
 ---
 
@@ -453,7 +476,7 @@ Compare as duas linhas destacadas. O perfil `desafio_com_gestao_ativa` tem desem
 | UF | Risco médio | % em risco alto/crítico | % que de fato atingiu |
 |---|---|---|---|
 | Rio Grande do Sul | 0,895 | 99,0% | 9,5% |
-| Bahia | 0,810 | 96,2% | 19,0% |
+| Bahia | 0,809 | 96,4% | 19,0% |
 
 No Rio Grande do Sul, **apenas 9,5% dos municípios atingiram a meta de 2024**. O modelo não inventou essa concentração: ela existe no dado. O que a existência dela sugere é que os determinantes relevantes operam em escala **estadual** — rede de formação continuada, material didático adotado, programa estadual de alfabetização, política de acompanhamento —, acima da capacidade de decisão de um município isolado.
 
@@ -461,12 +484,12 @@ No Rio Grande do Sul, **apenas 9,5% dos municípios atingiram a meta de 2024**. 
 
 | Faixa | Municípios | % |
 |---|---|---|
-| Baixo | 1.968 | 37,6% |
-| Moderado | 962 | 18,4% |
-| Alto | 1.034 | 19,8% |
-| Crítico | 1.268 | 24,2% |
+| Baixo | 1.964 | 37,5% |
+| Moderado | 969 | 18,5% |
+| Alto | 1.016 | 19,4% |
+| Crítico | 1.283 | 24,5% |
 
-**2.302 municípios (44,0%) em risco alto ou crítico** — dimensão que exige priorização, não atendimento universal.
+**2.299 municípios (43,9%) em risco alto ou crítico** — dimensão que exige priorização, não atendimento universal.
 
 ### 8.4 Perfis municipais (aprendizado não supervisionado)
 
@@ -486,7 +509,7 @@ Esta seção é deliberadamente extensa. Um modelo destinado a orientar polític
 
 **Esta é a limitação mais séria do trabalho.**
 
-`sigla_uf` é a variável mais importante do modelo, e a análise exploratória quantifica o peso disso: **usada sozinha, a UF já alcança AUC de 0,729**, contra 0,781 do modelo completo. A maior parte do poder preditivo é geográfica.
+`sigla_uf` é a variável mais importante do modelo, e a análise exploratória quantifica o peso disso: **usada sozinha, a UF já alcança AUC de 0,729**, contra 0,780 do modelo completo. A maior parte do poder preditivo é geográfica.
 
 Isso produz distorções verificáveis no ranking de risco:
 
@@ -505,6 +528,23 @@ O modelo está, nesses casos, dizendo essencialmente *"este município vai falha
 
 Qualquer uso operacional exige análise complementar por município, com dados locais que o modelo não possui.
 
+**A ancoragem não é efeito de variável econômica omitida — isso foi testado.** A explicação mais natural para o peso da UF seria que "estado" estivesse medindo "riqueza": os estados que vão bem seriam simplesmente os mais ricos. A hipótese foi testada incluindo o PIB por habitante (IBGE, 2021) no modelo:
+
+| Evidência | Resultado |
+|---|---|
+| Importância da UF antes do PIB | 0,1680 |
+| Importância da UF depois do PIB | **0,1713** (não caiu) |
+| Importância do PIB por habitante | **0,0024** — 10º lugar entre 11 variáveis |
+| Correlação entre UFs: riqueza mediana × atingimento | **−0,011** |
+| Correlação dentro de cada UF | −0,008 |
+| Amplitude de riqueza entre estados | R$ 9.177 (MA) a R$ 50.940 (MT) |
+
+A riqueza varia cinco vezes e meia entre os estados e não explica nada do desempenho. O caso mais claro é o próprio Ceará: não é um estado rico e lidera o atingimento com 91,3%, enquanto o Rio Grande do Sul, bem mais rico, fica em 9,5%.
+
+**O que a UF captura é institucional, não econômico** — política estadual de alfabetização, formação continuada de professores, material estruturado, regime de colaboração entre estado e municípios. Essa é uma limitação mais interessante do que parecia: o modelo aponta para um fator real e transferível, mas que ele não consegue nomear, porque não existe na base uma variável que descreva a política estadual.
+
+A consequência prática permanece: **um município não escolhe em que estado está**, então o score continua não podendo ser usado como medida de mérito da gestão municipal.
+
 ### 9.2 Teto de previsibilidade
 
 Existe um limite estatístico ao que qualquer modelo pode alcançar com estes dados:
@@ -518,13 +558,15 @@ Existe um limite estatístico ao que qualquer modelo pode alcançar com estes da
 
 Um dado que ilustra o teto: **17,6% dos municípios tinham esforço exigido negativo** (bastava não piorar) e, mesmo assim, **44,6% deles não atingiram a meta**.
 
-Consequência: **AUC de 0,781 está próxima do máximo obtenível com estas variáveis.** Qualquer modelo que reportasse 95% de acurácia neste problema estaria, quase certamente, com vazamento de dados.
+Consequência: **AUC de 0,780 está próxima do máximo obtenível com estas variáveis.** Qualquer modelo que reportasse 95% de acurácia neste problema estaria, quase certamente, com vazamento de dados.
 
 ### 9.3 Ausência de dados de contexto socioeconômico
 
-O modelo não inclui IDH municipal, renda per capita, taxa de pobreza, escolaridade materna, cobertura de creche ou gasto por aluno — variáveis que a literatura aponta como determinantes de alfabetização. A razão é técnica: as fontes mais completas (Atlas Brasil) têm vintage de **2010**, e usar dados de 2010 para explicar resultados de 2024 introduziria distorção maior que a omissão.
+O modelo inclui **uma** variável socioeconômica: o PIB por habitante de 2021, a medida econômica municipal mais recente publicada pelo IBGE. Como mostra a seção 9.1, ela não explica o desempenho.
 
-Parte do efeito estadual observado é, muito provavelmente, efeito socioeconômico não medido aparecendo disfarçado de geografia.
+Continuam fora: escolaridade materna, taxa de pobreza, cobertura de creche, gasto por aluno e o IDHM. Para o IDHM a razão é o vintage — o Atlas Brasil ainda tem base no Censo de 2010, e usar dados de 2010 para explicar resultados de 2024 introduziria distorção maior que a omissão. As demais não estão disponíveis de forma completa e atualizada para os 5.232 municípios.
+
+O resultado do teste com o PIB **reduz**, mas não elimina, a chance de haver efeito socioeconômico não medido: renda média e desigualdade não são a mesma coisa que PIB por habitante, que é uma medida de produção e não de bem-estar. Um município com uma grande mineradora tem PIB alto e pode ter população pobre.
 
 ### 9.4 Cobertura temporal
 
@@ -542,7 +584,7 @@ O modelo opera sobre municípios, não escolas nem alunos. Um município pode at
 
 ### 9.7 Multicolinearidade residual
 
-Mesmo após a remoção de `meta_2030` e `distancia_2030`, permanecem variáveis correlacionadas na base. Os coeficientes individuais devem ser lidos como indicativos de direção, não como estimativas causais precisas.
+Mesmo após a remoção de `meta_2030`, `distancia_2030` e das versões não logarítmicas de população e PIB, permanecem variáveis correlacionadas na base. Os coeficientes individuais devem ser lidos como indicativos de direção, não como estimativas causais precisas.
 
 ---
 
@@ -568,7 +610,7 @@ Mesmo após a remoção de `meta_2030` e `distancia_2030`, permanecem variáveis
 
 **Ação em escala estadual.** Com 99,0% dos municípios gaúchos em risco alto ou crítico, negociar município a município no RS é ineficiente. O achado indica interlocução com a Secretaria Estadual e o regime de colaboração.
 
-**Priorização orçamentária.** Atender 2.302 municípios simultaneamente não é viável. O ranking permite construir lotes — por exemplo, os 300 de maior risco no perfil `vulneravel` — dimensionados ao orçamento disponível.
+**Priorização orçamentária.** Atender 2.299 municípios simultaneamente não é viável. O ranking permite construir lotes — por exemplo, os 300 de maior risco no perfil `vulneravel` — dimensionados ao orçamento disponível.
 
 ### 10.3 Salvaguardas de uso
 
@@ -584,7 +626,8 @@ Mesmo após a remoção de `meta_2030` e `distancia_2030`, permanecem variáveis
 ### 11.1 Dados
 
 - **Série histórica ampliada.** Com 2021→2022 e 2022→2023 seria possível fazer validação temporal e separar padrão estrutural de particularidade anual.
-- **Contexto socioeconômico atualizado.** Incorporar dados do Censo 2022 conforme forem liberados por município, substituindo o vintage de 2010 do Atlas Brasil. Deve reduzir a ancoragem estadual, ao substituir "efeito UF" por variáveis que explicam esse efeito.
+- **Contexto socioeconômico além do PIB.** Incorporar dados do Censo 2022 conforme forem liberados por município — renda domiciliar, escolaridade materna, desigualdade. O teste com o PIB por habitante (seção 9.1) mostrou que produção econômica não explica o desempenho, mas medidas de bem-estar e escolaridade familiar podem ter comportamento diferente.
+- **Variáveis de política estadual.** Como o efeito da UF é institucional, o caminho mais promissor é descrever a política: existência de programa estadual de alfabetização, adesão ao regime de colaboração, material estruturado adotado, política de formação continuada. Isso transformaria "efeito Ceará" em variáveis acionáveis por qualquer estado.
 - **Granularidade escolar.** Se microdados por escola forem disponibilizados, o modelo capturaria desigualdade intramunicipal.
 - **Variáveis de gestão.** Existência de plano municipal de alfabetização, adesão a programas federais, rotatividade de secretários — mais acionáveis que geografia.
 
@@ -640,7 +683,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 python src/preprocessing/construir_base_analitica.py
-python src/preprocessing/baixar_dados_ibge.py --ano 2021
+python src/preprocessing/baixar_dados_ibge.py --ano 2021 --ano-pib 2021
 python src/preprocessing/enriquecer_base.py
 python src/visualization/analise_exploratoria.py
 python src/modeling/treinar_modelo.py
@@ -653,3 +696,4 @@ python src/evaluation/aplicacao_estrategica.py
 - INEP — Indicador Criança Alfabetizada e metas municipais (via camada Gold da Fase 2)
 - IBGE — API de Localidades: `servicodados.ibge.gov.br/api/v1/localidades/municipios`
 - IBGE — SIDRA, agregado 6579: estimativa populacional municipal
+- IBGE — SIDRA, agregado 5938: PIB dos Municípios (2021)

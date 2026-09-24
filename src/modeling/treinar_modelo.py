@@ -85,6 +85,7 @@ DESCARTADAS = [
     "meta_2030",        # constante: todos os municipios tem meta 80
     "distancia_2030",   # correlacao -1,000 com taxa_2023
     "populacao",        # mantida apenas em log, para nao duplicar
+    "pib_per_capita",   # idem: entra no modelo como log_pib_per_capita
 ]
 
 ALTA_CARDINALIDADE = [
