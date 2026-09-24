@@ -1,7 +1,7 @@
 {
   "visao_geral": {
     "municipios": 5232,
-    "colunas": 20,
+    "colunas": 22,
     "ufs": 24,
     "ufs_ausentes": [
       "AC",
@@ -241,6 +241,108 @@
       }
     }
   },
+  "riqueza_e_desempenho": {
+    "correlacao_entre_ufs": -0.011,
+    "correlacao_media_dentro_das_ufs": -0.008,
+    "por_uf": {
+      "AL": {
+        "pib_mediano": 15878.73,
+        "atingiu": 0.549
+      },
+      "AM": {
+        "pib_mediano": 11342.82,
+        "atingiu": 0.2708
+      },
+      "AP": {
+        "pib_mediano": 16605.54,
+        "atingiu": 0.4375
+      },
+      "BA": {
+        "pib_mediano": 12018.5,
+        "atingiu": 0.1904
+      },
+      "CE": {
+        "pib_mediano": 11048.24,
+        "atingiu": 0.913
+      },
+      "ES": {
+        "pib_mediano": 23298.43,
+        "atingiu": 0.7564
+      },
+      "GO": {
+        "pib_mediano": 30465.27,
+        "atingiu": 0.8066
+      },
+      "MA": {
+        "pib_mediano": 9177.29,
+        "atingiu": 0.5185
+      },
+      "MG": {
+        "pib_mediano": 20098.38,
+        "atingiu": 0.7953
+      },
+      "MS": {
+        "pib_mediano": 48435.51,
+        "atingiu": 0.6582
+      },
+      "MT": {
+        "pib_mediano": 50939.97,
+        "atingiu": 0.6403
+      },
+      "PA": {
+        "pib_mediano": 13801.74,
+        "atingiu": 0.3382
+      },
+      "PB": {
+        "pib_mediano": 11068.16,
+        "atingiu": 0.5136
+      },
+      "PE": {
+        "pib_mediano": 11266.44,
+        "atingiu": 0.6087
+      },
+      "PI": {
+        "pib_mediano": 10379.61,
+        "atingiu": 0.5848
+      },
+      "PR": {
+        "pib_mediano": 38428.55,
+        "atingiu": 0.4684
+      },
+      "RJ": {
+        "pib_mediano": 30069.42,
+        "atingiu": 0.4
+      },
+      "RN": {
+        "pib_mediano": 13518.98,
+        "atingiu": 0.482
+      },
+      "RO": {
+        "pib_mediano": 28301.0,
+        "atingiu": 0.5192
+      },
+      "RS": {
+        "pib_mediano": 47793.5,
+        "atingiu": 0.095
+      },
+      "SC": {
+        "pib_mediano": 43687.48,
+        "atingiu": 0.5546
+      },
+      "SE": {
+        "pib_mediano": 14603.6,
+        "atingiu": 0.4933
+      },
+      "SP": {
+        "pib_mediano": 32360.17,
+        "atingiu": 0.5169
+      },
+      "TO": {
+        "pib_mediano": 24892.43,
+        "atingiu": 0.562
+      }
+    }
+  },
   "relevancia": {
     "auc_univariada": [
       {
@@ -272,6 +374,16 @@
         "variavel": "porte_municipio (categorica)",
         "poder_separacao": 0.528,
         "direcao": "depende da categoria"
+      },
+      {
+        "variavel": "pib_per_capita",
+        "poder_separacao": 0.522,
+        "direcao": "maior -> menos chance"
+      },
+      {
+        "variavel": "log_pib_per_capita",
+        "poder_separacao": 0.522,
+        "direcao": "maior -> menos chance"
       },
       {
         "variavel": "meta_2024",

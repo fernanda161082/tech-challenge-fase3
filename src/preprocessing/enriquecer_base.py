@@ -2,7 +2,7 @@
 Enriquecimento da base analitica com fontes externas.
 
 Junta a base construida a partir da Gold da Fase 2 com os dados
-territoriais e populacionais baixados do IBGE.
+territoriais, populacionais e economicos baixados do IBGE.
 
 POR QUE ENRIQUECER
 ------------------
@@ -157,6 +157,80 @@ def juntar_populacao(base: pd.DataFrame) -> pd.DataFrame:
     return base
 
 
+def juntar_pib(base: pd.DataFrame) -> pd.DataFrame:
+    """Acrescenta o PIB por habitante.
+
+    POR QUE ESTA VARIAVEL
+    ---------------------
+    O enunciado pede variaveis "educacionais, territoriais e
+    socioeconomicas". Ate aqui havia so as duas primeiras. O PIB por
+    habitante e a medida socioeconomica municipal mais recente
+    disponivel (serie ate 2021), bem mais atual que o IDHM, preso ao
+    Censo de 2010.
+
+    Ha uma hipotese a testar junto: parte do peso da UF no modelo pode
+    ser efeito economico disfarcado de geografia. Se for, a importancia
+    da UF cai quando o PIB entra. Se nao cair, e evidencia de que o
+    efeito estadual e institucional - politica educacional, formacao de
+    professores, regime de colaboracao - e nao economico.
+    """
+    pib = ler_fonte("ibge_pib")
+    if pib is None:
+        return base
+
+    medir_cobertura(base, pib, "pib")
+
+    colunas = [c for c in ["id_municipio", "pib", "pib_variavel", "pib_unidade"]
+               if c in pib.columns]
+    pib = pib[colunas].drop_duplicates("id_municipio").set_index("id_municipio")
+    base = base.join(pib, how="left")
+
+    variavel = _primeiro_valor(base, "pib_variavel")
+    unidade = _primeiro_valor(base, "pib_unidade")
+
+    if "per capita" in variavel.lower():
+        # O IBGE ja publica o valor por habitante: nada a calcular.
+        base["pib_per_capita"] = base["pib"]
+        origem = f"direto da fonte ({unidade})"
+    elif "populacao" in base.columns:
+        # PIB total: converte para reais (a serie costuma vir em mil
+        # reais) e divide pela populacao. Um erro de fator 1000 aqui
+        # passaria despercebido, por isso a unidade e conferida.
+        fator = 1000 if "mil" in unidade.lower() else 1
+        base["pib_per_capita"] = base["pib"] * fator / base["populacao"]
+        origem = f"calculado: PIB ({unidade}) / populacao"
+    else:
+        print("  [AVISO] PIB total sem populacao para dividir - variavel ignorada")
+        return base.drop(columns=[c for c in ["pib", "pib_variavel", "pib_unidade"]
+                                  if c in base.columns])
+
+    # Mesma razao do log da populacao: a distribuicao de renda entre
+    # municipios e muito assimetrica, com poucos casos extremos
+    # (municipios com refinaria, mineracao ou porto).
+    base["log_pib_per_capita"] = np.log1p(base["pib_per_capita"])
+
+    validos = base["pib_per_capita"].dropna()
+    if len(validos):
+        print(f"  PIB por habitante ({origem})")
+        print(f"      mediana R$ {validos.median():>12,.0f}")
+        print(f"      minimo   R$ {validos.min():>12,.0f}")
+        print(f"      maximo   R$ {validos.max():>12,.0f}")
+        print(f"      assimetria {validos.skew():+.1f} -> justifica o log")
+        if validos.median() < 1000 or validos.median() > 500_000:
+            print("      [ATENCAO] mediana fora da faixa plausivel - conferir unidade")
+
+    return base.drop(columns=[c for c in ["pib", "pib_variavel", "pib_unidade"]
+                              if c in base.columns])
+
+
+def _primeiro_valor(base: pd.DataFrame, coluna: str) -> str:
+    """Le o primeiro valor nao nulo de uma coluna de metadado."""
+    if coluna not in base.columns:
+        return ""
+    valores = base[coluna].dropna()
+    return str(valores.iloc[0]) if len(valores) else ""
+
+
 def relatar(base: pd.DataFrame) -> None:
     """Resume o estado final da base enriquecida."""
     print("\n  Composicao final:")
@@ -199,6 +273,7 @@ def main() -> int:
 
     base = juntar_localidades(base)
     base = juntar_populacao(base)
+    base = juntar_pib(base)
 
     print(f"\n  base enriquecida: {len(base)} municipios, {base.shape[1]} colunas")
 

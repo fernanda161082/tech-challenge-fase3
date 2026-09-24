@@ -21,6 +21,9 @@ FONTES
 2. Populacao    - populacao residente estimada por municipio
    API SIDRA, agregado 6579
 
+3. PIB          - Produto Interno Bruto municipal
+   API SIDRA, agregado 5938 (PIB dos Municipios)
+
 Execucao:
     python src/preprocessing/baixar_dados_ibge.py
     python src/preprocessing/baixar_dados_ibge.py --forcar
@@ -32,6 +35,7 @@ import argparse
 import gzip
 import json
 import sys
+import unicodedata
 import urllib.error
 import urllib.request
 
@@ -42,6 +46,17 @@ PASTA_RAW = RAIZ_PROJETO / "data" / "raw"
 
 URL_LOCALIDADES = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
 URL_POPULACAO = "https://apisidra.ibge.gov.br/values/t/6579/n6/all/v/9324/p/{ano}"
+
+# PIB dos Municipios (agregado 5938). A variavel nao e fixada no codigo:
+# o script consulta antes os metadados do agregado e escolhe a variavel
+# pelo nome. Isso evita depender de um numero magico que pode mudar.
+URL_METADADOS_PIB = "https://servicodados.ibge.gov.br/api/v3/agregados/5938/metadados"
+URL_PIB = "https://apisidra.ibge.gov.br/values/t/5938/n6/all/v/{variavel}/p/{ano}"
+
+# Usada apenas se os metadados nao estiverem disponiveis. 37 e o PIB a
+# precos correntes; o valor per capita e calculado depois, dividindo
+# pela populacao.
+VARIAVEL_PIB_PADRAO = "37"
 
 TEMPO_LIMITE = 120  # segundos
 
@@ -144,6 +159,76 @@ def processar_populacao(bruto: list) -> pd.DataFrame:
     return pd.DataFrame(linhas)
 
 
+def sem_acento(texto: str) -> str:
+    """Remove acentos para comparar nomes de variaveis com seguranca."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", texto)
+        if unicodedata.category(c) != "Mn"
+    ).lower()
+
+
+def escolher_variavel_pib(metadados) -> tuple[str, str]:
+    """Descobre, nos metadados do agregado, qual variavel baixar.
+
+    Prefere o PIB per capita, que ja vem pronto. Se ele nao existir na
+    lista, cai para o PIB total, e o calculo por habitante e feito no
+    script de enriquecimento.
+
+    Devolve (id_da_variavel, nome_da_variavel).
+    """
+    if not isinstance(metadados, dict):
+        return VARIAVEL_PIB_PADRAO, "desconhecida (metadados indisponiveis)"
+
+    variaveis = metadados.get("variaveis") or []
+    for item in variaveis:
+        nome = sem_acento(str(item.get("nome", "")))
+        if "per capita" in nome:
+            print(f"  variavel escolhida: {item['id']} - {item.get('nome')}")
+            return str(item["id"]), str(item.get("nome"))
+
+    for item in variaveis:
+        nome = sem_acento(str(item.get("nome", "")))
+        if "produto interno bruto" in nome and "valor adicionado" not in nome:
+            print(f"  variavel escolhida: {item['id']} - {item.get('nome')}")
+            print("  (PIB total; o valor por habitante sera calculado depois)")
+            return str(item["id"]), str(item.get("nome"))
+
+    return VARIAVEL_PIB_PADRAO, "desconhecida (nome nao encontrado)"
+
+
+def processar_pib(bruto: list, nome_variavel: str) -> pd.DataFrame:
+    """Converte a resposta do SIDRA sobre PIB em tabela.
+
+    Alem do valor, guarda o nome da variavel e a unidade de medida.
+    Sem a unidade nao da para saber se o numero esta em reais ou em
+    milhares de reais, e um erro de fator 1000 passaria despercebido.
+    """
+    if len(bruto) < 2:
+        return pd.DataFrame()
+
+    # A primeira linha do SIDRA e descritiva: traz os ROTULOS dos campos
+    # ("Unidade de Medida"), nao os valores. A unidade real aparece em
+    # cada linha de dado, no campo MN.
+    unidade = str(bruto[1].get("MN", "")) if len(bruto) > 1 else ""
+
+    linhas = []
+    for item in bruto[1:]:
+        codigo = item.get("D1C")
+        if not codigo:
+            continue
+        try:
+            valor = float(item.get("V"))
+        except (TypeError, ValueError):
+            valor = None
+        linhas.append({
+            "id_municipio": str(codigo).zfill(7),
+            "pib": valor,
+            "pib_variavel": nome_variavel,
+            "pib_unidade": unidade,
+        })
+    return pd.DataFrame(linhas)
+
+
 def salvar(df: pd.DataFrame, nome: str) -> Path:
     PASTA_RAW.mkdir(parents=True, exist_ok=True)
     destino = PASTA_RAW / f"{nome}.csv"
@@ -156,6 +241,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Baixa dados do IBGE")
     parser.add_argument("--ano", type=int, default=2022,
                         help="ano da estimativa populacional")
+    parser.add_argument("--ano-pib", type=int, default=2021,
+                        help="ano do PIB municipal (serie disponivel ate 2021)")
     parser.add_argument("--forcar", action="store_true",
                         help="rebaixa mesmo se o arquivo ja existir")
     args = parser.parse_args()
@@ -191,10 +278,31 @@ def main() -> int:
             else:
                 print("  [AVISO] resposta de populacao vazia - verifique o ano")
 
-    print("-" * 72)
-    print(f"  {sucessos} de 2 fontes disponiveis em data/raw/\n")
+    # ---------------- PIB municipal ----------------
+    destino = PASTA_RAW / "ibge_pib.csv"
+    if destino.exists() and not args.forcar:
+        print(f"  ibge_pib.csv ja existe - pulando (use --forcar)")
+        sucessos += 1
+    else:
+        metadados = buscar_json(URL_METADADOS_PIB, "metadados do PIB")
+        variavel, nome_variavel = escolher_variavel_pib(metadados)
+        bruto = buscar_json(
+            URL_PIB.format(variavel=variavel, ano=args.ano_pib),
+            f"PIB municipal {args.ano_pib}",
+        )
+        if bruto:
+            tabela = processar_pib(bruto, nome_variavel)
+            if len(tabela):
+                salvar(tabela, "ibge_pib")
+                sucessos += 1
+            else:
+                print("  [AVISO] resposta de PIB vazia - verifique o ano")
+                print("          a serie do PIB municipal vai ate 2021")
 
-    if sucessos < 2:
+    print("-" * 72)
+    print(f"  {sucessos} de 3 fontes disponiveis em data/raw/\n")
+
+    if sucessos < 3:
         print("  A base pode ser enriquecida com o que foi baixado.")
         print("  O script de juncao trata fontes ausentes sem quebrar.\n")
 

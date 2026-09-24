@@ -15,38 +15,39 @@
     "nivel_oficial_2023",
     "esforco_exigido",
     "log_populacao",
-    "porte_municipio"
+    "porte_municipio",
+    "log_pib_per_capita"
   ],
   "municipios": 5232,
   "proporcao_positivos": 0.5328746177370031,
   "validacao_cruzada": [
     {
       "modelo": "regressao_logistica",
-      "auc": 0.7884974544061479,
-      "auc_desvio": 0.008531743354147544,
+      "auc": 0.7895829511053614,
+      "auc_desvio": 0.007349852223045441,
       "combinacoes": 5,
-      "pior_auc": 0.7578643334959895,
+      "pior_auc": 0.7579569434496107,
       "parametros": {
         "C": 10.0
       }
     },
     {
       "modelo": "random_forest",
-      "auc": 0.7845378417040408,
-      "auc_desvio": 0.007624725333762988,
+      "auc": 0.7850839291178413,
+      "auc_desvio": 0.008377273998428802,
       "combinacoes": 6,
-      "pior_auc": 0.7700309016589257,
+      "pior_auc": 0.7738030575248993,
       "parametros": {
-        "max_depth": 12,
+        "max_depth": null,
         "min_samples_leaf": 5
       }
     },
     {
       "modelo": "gradient_boosting",
-      "auc": 0.7797107292263962,
-      "auc_desvio": 0.009200592723402675,
+      "auc": 0.7799676984895612,
+      "auc_desvio": 0.009918595415079499,
       "combinacoes": 12,
-      "pior_auc": 0.7474738017007799,
+      "pior_auc": 0.7512682637622191,
       "parametros": {
         "l2_regularization": 1.0,
         "learning_rate": 0.03,
@@ -63,19 +64,19 @@
     }
   ],
   "teste": {
-    "auc": 0.780926909105425,
-    "acuracia": 0.7102446483180428,
-    "precisao": 0.7097625329815304,
-    "revocacao": 0.7718794835007173,
-    "f1": 0.7395189003436426,
+    "auc": 0.7803703973306221,
+    "acuracia": 0.7025993883792049,
+    "precisao": 0.7031662269129287,
+    "revocacao": 0.7647058823529411,
+    "f1": 0.7326460481099656,
     "matriz_confusao": [
       [
-        391,
-        220
+        386,
+        225
       ],
       [
-        159,
-        538
+        164,
+        533
       ]
     ]
   }
